@@ -22,6 +22,7 @@ class Bot:
     energy_max: int                = 1000
     energy_move: int               = 1
     energy_hit: int                = 5
+    rotation_max: float            = 5
 
 
     def __post_init__(self):
@@ -135,7 +136,7 @@ class Bot:
             return None
                 
         # Try to move in the provided direction
-        self.direction += max(np.radians(-5), min(np.radians(+5), float(dtheta)))
+        self.direction += max(np.radians(-self.rotation_max), min(np.radians(+self.rotation_max), float(dtheta)))
         T = np.array([np.cos(self.direction), np.sin(self.direction)])
         self.position, self.hit = self.move_to(self.position + T*self.speed, environment)
         
