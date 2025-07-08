@@ -99,15 +99,17 @@ def evaluate(model, Bot, Environment, runs=10, seed=None, debug=False):
             "bot" : ax1.add_artist(Circle((0,0), 0.05,
                                           zorder=50, facecolor="white", edgecolor="black")),
             "rays" : ax1.add_collection(LineCollection([], color="C1", linewidth=0.5, zorder=30)),
-            "hits" :  ax1.scatter([], [], s=1, linewidth=0, color="black", zorder=40),
+            "hits" : ax1.scatter([], [], s=1, linewidth=0, color="black", zorder=40),
             "camera" : ax2.imshow(np.zeros((1,1,3)), interpolation="nearest",
                                   origin="lower", extent = [0.0, 1.0, 0.0, 1.0]),
-            "energy" : ax2.add_collection(
+            "energy" : {
+                "bar" : ax2.add_collection(
                 LineCollection([[(0.1, 0.1),(0.9, 0.1)],
                                 [(0.1, 0.1),(0.9, 0.1)],
                                 [(0.1, 0.1),(0.9, 0.1)]],
                                color=("black", "white", "C1"), linewidth=(20,18,12),
-                               capstyle="round", zorder=150)) }
+                               capstyle="round", zorder=150)),
+                "txt" : ax2.text(0.5, 0.1, '?', va = 'center', ha = 'center', zorder=200)}}
 
     
     # Unfold model
@@ -162,24 +164,29 @@ def evaluate(model, Bot, Environment, runs=10, seed=None, debug=False):
             iteration += 1
 
             if debug:
+                bot.camera.render(bot.position, bot.direction,
+                                  environment.world, environment.colormap)
                 graphics["rays"].set_segments(bot.camera.rays)
                 graphics["hits"].set_offsets(bot.camera.rays[:,1,:])
                 graphics["bot"].set_center(bot.position)
                 if energy < bot.energy:
-                    graphics["energy"].set_color( ("black", "white", "C2") )
+                    graphics["energy"]["bar"].set_color( ("black", "white", "C2") )
                 else:
-                    graphics["energy"].set_color( ("black", "white", "C1") )        
-
+                    graphics["energy"]["bar"].set_color( ("black", "white", "C1") )        
+                graphics["energy"]["txt"].set_text(f'{bot.energy} ({environment.source.energy})')
                 if bot.energy > 0:
-                    ratio = bot.energy/bot.energy_max
-                    graphics["energy"].set_segments([[(0.1, 0.1),(0.9, 0.1)],
+                    ratio = np.clip(bot.energy/bot.energy_max, 0, 1)
+                    graphics["energy"]["bar"].set_segments([[(0.1, 0.1),(0.9, 0.1)],
                                                      [(0.1, 0.1),(0.9, 0.1)],
                                                      [(0.1, 0.1),(0.1 + ratio*0.8, 0.1)]])
                 else:
-                    graphics["energy"].set_segments([[(0.1, 0.1),(0.9, 0.1)],
+                    graphics["energy"]["bar"].set_segments([[(0.1, 0.1),(0.9, 0.1)],
                                                      [(0.1, 0.1),(0.9, 0.1)]])            
                 graphics["camera"].set_data(bot.camera.framebuffer)
                 plt.pause(1/60)
+            else:
+                bot.camera.update(bot.position, bot.direction,
+                                  environment.world, environment.colormap)
 
             scores.append (distance)
 
